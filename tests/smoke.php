@@ -36,6 +36,7 @@ $recuperado = buscarPolimorfico($livros, $livro->id());
 assert($recuperado instanceof Livro);
 assert(count($livros->autoresDoLivro($livro->id())) === 1);
 
+//Busca com Autores
 $completo = $livros->buscarComAutores($livro->id());
 assert(count($completo->autores()) === 1);
 assert($completo->autores()[0]->id() === $autor->id());
@@ -45,6 +46,16 @@ $recuperado->alterarTitulo('Livro Atualizado '.$tag);
 $livros->salvar($recuperado);
 assert($livros->buscar($livro->id())->titulo() === 'Livro Atualizado '.$tag);
 assert(buscarPolimorfico($autores, $autor->id()) instanceof Autor);
+
+//Rollback
+$tituloFalho = 'Livro Rollback '.$tag;
+try {
+    $livros->salvarComAutores(new Livro($tituloFalho), [999999999]);
+    assert(false, 'A transação deveria ter falhado');
+} catch (\PDOException $e){}
+$stmt = $pdo->prepare('SELECT COUNT(*) FROM livros WHERE titulo = :t');
+$stmt->execute(['t' => $tituloFalho]);
+assert((int)$stmt->fetchColumn() === 0);
 
 // Remoção da associação antes da exclusão para respeitar a FK.
 $pdo->prepare('DELETE FROM livros_autores WHERE livro_id = :id')->execute(['id' => $livro->id()]);

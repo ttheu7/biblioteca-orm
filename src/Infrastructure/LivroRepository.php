@@ -57,4 +57,19 @@ final class LivroRepository extends AbstractRepository {
         }
         return $livro;
     }
+
+    public function salvarComAutores(Livro $livro, array $autorIds): void {
+        $this->pdo->beginTransaction();
+        try {
+            $this->salvar($livro);
+            foreach ($autorIds as $autorId) {
+                $this->associarAutor($livro->id(), (int)$autorId);
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            if($this->pdo->inTransaction()) $this->pdo->rollback();
+            throw $e;
+        }
+        
+    }
 }
