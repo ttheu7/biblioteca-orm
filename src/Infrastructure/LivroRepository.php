@@ -69,7 +69,11 @@ final class LivroRepository extends AbstractRepository {
         } catch (\Throwable $e) {
             if($this->pdo->inTransaction()) $this->pdo->rollback();
             throw $e;
-        }
-        
+        }   
+    }
+
+    public function desassociarAutores(int $livroId): void {
+        $stmt = $this->pdo->prepare('DELETE FROM livros_autores WHERE livro_id = :id');
+        $stmt->execute(['id' => $livroId]);
     }
 }

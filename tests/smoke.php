@@ -58,7 +58,7 @@ $stmt->execute(['t' => $tituloFalho]);
 assert((int)$stmt->fetchColumn() === 0);
 
 // Remoção da associação antes da exclusão para respeitar a FK.
-$pdo->prepare('DELETE FROM livros_autores WHERE livro_id = :id')->execute(['id' => $livro->id()]);
+$livros->desassociarAutores($livro->id());
 $livros->excluir($livro->id());
 $autores->excluir($autor->id());
 echo "Smoke test concluído com sucesso\n";
