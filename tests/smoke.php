@@ -14,27 +14,38 @@ use Biblioteca\Infrastructure\LivroRepository;
 use Biblioteca\Infrastructure\AutorRepository;
 use Biblioteca\Infrastructure\RepositoryInterface;
 function buscarPolimorfico(RepositoryInterface $repo, int $id): ?object { return $repo->buscar($id); }
+
 // Injeta a MESMA conexão nos dois repositórios.
 $pdo = Conexao::abrir();
 $livros = new LivroRepository($pdo);
 $autores = new AutorRepository($pdo);
 $tag = bin2hex(random_bytes(4));
+
 // Primeiro persiste o Autor e o Livro, obtendo seus IDs.
 $autor = new Autor('Autor Teste '.$tag, 'Brasil');
 $autores->salvar($autor);
 $livro = new Livro('Livro Teste '.$tag, null, 2026);
 $livros->salvar($livro);
 assert($livro->id() !== null);
+
 // Agora a tabela associativa pode referenciar ambos os registros.
 $livros->associarAutor($livro->id(), $autor->id());
+
 // Demonstra despacho polimórfico pelo contrato RepositoryInterface.
 $recuperado = buscarPolimorfico($livros, $livro->id());
 assert($recuperado instanceof Livro);
 assert(count($livros->autoresDoLivro($livro->id())) === 1);
+
+$completo = $livros->buscarComAutores($livro->id());
+assert(count($completo->autores()) === 1);
+assert($completo->autores()[0]->id() === $autor->id());
+
 $recuperado->alterarTitulo('Livro Atualizado '.$tag);
+
 $livros->salvar($recuperado);
 assert($livros->buscar($livro->id())->titulo() === 'Livro Atualizado '.$tag);
 assert(buscarPolimorfico($autores, $autor->id()) instanceof Autor);
+
 // Remoção da associação antes da exclusão para respeitar a FK.
 $pdo->prepare('DELETE FROM livros_autores WHERE livro_id = :id')->execute(['id' => $livro->id()]);
 $livros->excluir($livro->id());

@@ -48,4 +48,13 @@ final class LivroRepository extends AbstractRepository {
             'INSERT INTO livros_autores (livro_id, autor_id) VALUES (:livro, :autor)');
         $stmt->execute(['livro' => $livroId, 'autor' => $autorId]);
     }
+
+    public function buscarComAutores(int $id) : ?Livro {
+        $livro = $this->buscar($id);
+        if(!$livro instanceof Livro) return null;
+        foreach ($this->autoresDoLivro($id) as $autor){
+            $livro->adicionarAutor($autor);
+        }
+        return $livro;
+    }
 }
